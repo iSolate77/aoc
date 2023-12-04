@@ -2,7 +2,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 
 fn main() -> Result<()> {
-    let lines = std::fs::read_to_string("src/bin/input1_2.test")?;
+    let lines = std::fs::read_to_string("src/bin/input1_1.prod")?;
     let sum: u32 = lines
         .lines()
         .filter_map(|line| get_calibration_value(line))
@@ -12,30 +12,44 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_calibration_value(line: &str) -> Option<u32> {
+fn get_calibration_value(s: &str) -> Option<u32> {
     let word_to_digit = get_word_to_digit_map();
     let mut digits = Vec::new();
     let mut current_word = String::new();
-    for c in line.chars() {
+
+    for c in s.chars() {
         if c.is_alphabetic() {
             current_word.push(c);
-            if let Some(&digit) = word_to_digit.get(current_word.as_str()) {
-                digits.push(digit);
-                current_word.clear();
+            // Check each spelled-out digit in the current word
+            for (word, &digit) in &word_to_digit {
+                if let Some(pos) = current_word.find(word) {
+                    digits.push(digit);
+                    current_word.replace_range(pos..pos + word.len(), "");
+                }
             }
         } else if c.is_digit(10) {
             if !current_word.is_empty() {
-                if let Some(&digit) = word_to_digit.get(current_word.as_str()) {
-                    digits.push(digit);
-                    current_word.clear();
-                }
+                current_word.clear();
             }
+            digits.push(c.to_digit(10).unwrap());
         }
     }
-    if digits.len() >= 2 {
-        Some(digits[0] * 10 + digits[digits.len() - 1])
-    } else {
-        None
+
+    // Check if a valid spelled-out digit is left at the end
+    for (word, &digit) in &word_to_digit {
+        if current_word == *word {
+            digits.push(digit);
+            break;
+        }
+    }
+
+    // Determine the calibration value
+    match digits.len() {
+        1 => Some(digits[0] * 11),
+        _ => digits
+            .first()
+            .zip(digits.last())
+            .map(|(&first, &last)| first * 10 + last),
     }
 }
 
