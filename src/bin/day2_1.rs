@@ -4,25 +4,38 @@ use std::str::FromStr;
 #[derive(Debug)]
 struct Game {
     id: u32,
-    blue: u32,
-    red: u32,
-    green: u32,
+    // blue: u32,
+    // red: u32,
+    // green: u32,
+    min_blue: u32,
+    min_red: u32,
+    min_green: u32,
 }
 
 impl Game {
     fn new(id: u32) -> Self {
         Self {
             id,
-            blue: 0,
-            red: 0,
-            green: 0,
+            min_blue: 0,
+            min_red: 0,
+            min_green: 0,
         }
     }
 
-    fn add_counts(&mut self, blue: u32, red: u32, green: u32) {
-        self.blue += blue;
-        self.red += red;
-        self.green += green;
+    // fn add_counts(&mut self, blue: u32, red: u32, green: u32) {
+    //     self.blue += blue;
+    //     self.red += red;
+    //     self.green += green;
+    // }
+
+    fn update_counts(&mut self, blue: u32, red: u32, green: u32) {
+        self.min_blue = self.min_blue.max(blue);
+        self.min_red = self.min_red.max(red);
+        self.min_green = self.min_green.max(green);
+    }
+
+    fn power(&self) -> u32 {
+        self.min_blue * self.min_red * self.min_green
     }
 
     // fn impossible(&self) -> bool {
@@ -71,15 +84,9 @@ impl FromStr for Game {
                         _ => return Err(anyhow!("Invalid color name {}", color_name)),
                     };
                 }
-                if blue > 14 || red > 12 || green > 13 {
-                    return Ok(Game {
-                        id,
-                        blue: 0,
-                        red: 0,
-                        green: 0,
-                    });
-                }
-                game.add_counts(blue, red, green);
+
+                // Update the game's min counts for each color
+                game.update_counts(blue, red, green);
             }
         }
 
@@ -94,14 +101,24 @@ fn main() -> Result<()> {
 }
 
 fn read_and_process_games(input: String) -> Result<u32> {
-    let mut sum_of_ids = 0;
+    let mut total_power = 0;
     for line in input.lines() {
         let game = Game::from_str(line)?;
-        if game.blue == 0 && game.red == 0 && game.green == 0 {
-            // Skip this game as it's impossible
-            continue;
-        }
-        sum_of_ids += game.id;
+        total_power += game.power();
     }
-    Ok(sum_of_ids)
+    Ok(total_power)
 }
+
+// fn read_and_process_games(input: String) -> Result<u32> {
+//     let mut sum_of_ids = 0;
+//     for line in input.lines() {
+//         let game = Game::from_str(line)?;
+//         if game.blue == 0 && game.red == 0 && game.green == 0 {
+//             // Skip this game as it's impossible
+//             continue;
+//         }
+//         sum_of_ids += game.id;
+//     }
+//     Ok(sum_of_ids)
+// }
+
